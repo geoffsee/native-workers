@@ -80,6 +80,115 @@ import {
 
 See `src/index.ts` for supported exports.
 
+## Service bindings (Worker-to-Worker)
+
+`native-workers` supports Cloudflare's [service bindings](https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/) so one Worker can call another via `env.<BINDING>.fetch(...)` without going over the network. Bindings are resolved from your Wrangler config and routed in-process by a single Miniflare instance — no `unsafeDevRegistryPath` / dev registry is required.
+
+### Declare the binding in `wrangler.toml`
+
+Add a `[[services]]` block to the **caller**'s Wrangler config pointing at the **callee**'s Worker name:
+
+```toml
+# caller/wrangler.toml
+name = "api-gateway"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[[services]]
+binding = "AUTH"        # env.AUTH in the caller
+service = "auth-worker" # must match the callee's `name`
+```
+
+```ts
+// caller/src/index.ts
+export default {
+  async fetch(req: Request, env: { AUTH: Fetcher }) {
+    return env.AUTH.fetch(req);
+  },
+};
+```
+
+### Case 1 — Wrangler surfaces the callee automatically
+
+Some Wrangler configurations cause `unstable_getMiniflareWorkerOptions()` to return the callee in its `externalWorkers` array. When that happens, `native-workers` picks it up and registers it on the same Miniflare instance — **no `extraWorkers` needed, no extra code**, just `native-workers serve` / `build --miniflare`.
+
+The most common shape that triggers this is a **Durable Object with `script_name`** declared in the *caller's* Wrangler config — Wrangler treats the referenced script as an auxiliary worker, and a `[[services]]` binding pointing at the same `name` resolves through it. For example:
+
+```
+caller/
+├── wrangler.toml
+├── src/index.ts        # primary: uses env.AUTH.fetch(...)
+└── workers/
+    └── auth.js         # auxiliary: handles auth requests + a DO class
+```
+
+```toml
+# caller/wrangler.toml
+name = "api-gateway"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Service binding the primary uses: env.AUTH.fetch(req)
+[[services]]
+binding = "AUTH"
+service = "auth-worker"
+
+# Durable Object whose implementation lives in another script.
+# This is what makes Wrangler treat `auth-worker` as a known
+# auxiliary worker and emit it in `externalWorkers`.
+[[durable_objects.bindings]]
+name = "AUTH_DO"
+class_name = "AuthSession"
+script_name = "auth-worker"
+
+# The auxiliary worker definition Wrangler will surface.
+[[workers]]
+name = "auth-worker"
+main = "workers/auth.js"
+```
+
+```ts
+// caller/src/index.ts
+export default {
+  async fetch(req: Request, env: { AUTH: Fetcher; AUTH_DO: DurableObjectNamespace }) {
+    return env.AUTH.fetch(req); // routed in-process to auth-worker
+  },
+};
+```
+
+```bash
+bunx native-workers serve --project ./caller
+# or, when shipping the embedded binary:
+bunx native-workers build --project ./caller --miniflare
+```
+
+> **Heuristic:** if `wrangler dev` alone (no `--config` for the callee, no dev registry) can already route `env.AUTH.fetch(...)` to the callee, you're in Case 1 and `native-workers` will Just Work. If you have to run a second `wrangler dev` or use the dev registry to make it work, you're in **Case 2** — use `extraWorkers` below.
+
+### Case 2 — callee is owned by your process but **not** in Wrangler config
+
+When the callee's script is bundled by *your* process (for example, you want to register an ad-hoc Worker that isn't in the primary's `wrangler.toml`), pass it via `extraWorkers` on the programmatic API. Each entry must set `name` to match the `service` field declared in the caller's binding:
+
+```ts
+import { runMiniflareHost } from "native-workers/host";
+
+await runMiniflareHost({
+  extraWorkers: [
+    {
+      name: "auth-worker", // matches `[[services]] service = "auth-worker"`
+      modules: true,
+      scriptPath: "./dist/auth/index.js",
+      // or: script: "export default { fetch() { return new Response('ok'); } }",
+    },
+  ],
+});
+```
+
+`extraWorkers` are merged with Wrangler-discovered auxiliary workers and deduplicated by `name` (extras win on conflict). The primary Worker always stays at index 0 and is never replaced.
+
+### Overriding bindings entirely
+
+For total control, pass `miniflare: { workers: [...] }` to `runMiniflareHost` to bypass Wrangler-derived bindings and supply the full Miniflare worker array yourself.
+
 ## Tests
 
 From this package directory:
