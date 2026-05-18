@@ -35,3 +35,10 @@ jobs:
 
       - name: Test
         run: bun test
+
+      - name: Verify bunx native-workers (npm)
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          cd "$tmp"
+          bunx native-workers --help | head -n 3

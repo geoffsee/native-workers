@@ -61,8 +61,10 @@ If you'd rather pin a version into your project instead of resolving it on each 
 ```bash
 bun add -d native-workers
 # then
-bun x native-worker build --project .
+bunx native-workers build --project .
 ```
+
+> Use **`bunx native-workers`** (the npm package name). **`bunx native-worker`** only works once `native-workers` is in your `package.json`; otherwise Bun looks for a non-existent `native-worker` package on the registry.
 
 Generated files (ignored from VCS typically): **`{project}/.native-worker/embed-manifest.ts`** and **`compile-gateway.ts`**.
 

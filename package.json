@@ -1,6 +1,6 @@
 {
   "name": "native-workers",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Build Bun native executables for Cloudflare Workers using Wrangler bundles, Miniflare, and embedded workerd.",
   "license": "MIT",
   "type": "module",
