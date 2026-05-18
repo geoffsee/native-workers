@@ -1,0 +1,38 @@
+export {
+	buildNativePipeline,
+	compileGatewayPath,
+	compileNativeExecutable,
+	createWorkerdBundlerPlugin,
+	defaultBinOutPath,
+	defaultMiniflareBinaryName,
+	defaultStandaloneBinaryName,
+	defaultWorkerNativeGeneratedDir,
+	embedManifestPath,
+	resolveBunCompileTarget,
+	resolveBundledJsEntry,
+	resolveWorkerdExecutable,
+	runWranglerDeployDryRun,
+	writeCompileGateway,
+	writeEmbedManifest,
+	type BuildNativePipelineOptions,
+	type BuildNativePipelineResult,
+	type NativeCompileOptions,
+	type WranglerDryRunResult,
+	WORKER_NATIVE_CACHE_DIR_NAME,
+} from "./build/index.ts";
+export {
+	canonicalAppRoot,
+	materializeEmbeddedWorkerBundle,
+	materializeEmbeddedWorkerd,
+	resolveBundledWorkerEntry,
+	runMiniflareHost,
+	runMiniflareHostMain,
+	type MiniflareHostEmbed,
+	type RunMiniflareHostOptions,
+} from "./host/miniflare-host.ts";
+export {
+	buildMiniflareWorkersArray,
+	loadWranglerMiniflareFragment,
+	type LoadWranglerMiniflareArgs,
+	type WranglerMiniflareFragment,
+} from "./host/load-wrangler-miniflare.ts";

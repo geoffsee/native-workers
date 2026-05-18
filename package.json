@@ -1,0 +1,54 @@
+{
+  "name": "native-workers",
+  "version": "0.0.3",
+  "description": "Build Bun native executables for Cloudflare Workers using Wrangler bundles, Miniflare, and embedded workerd.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "native-worker": "./src/cli.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./host": "./src/host/miniflare-host.ts",
+    "./build": "./src/build/index.ts",
+    "./internal/workerd-shim": "./src/runtime/workerd-package-shim.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "peerDependencies": {
+    "miniflare": ">=4",
+    "workerd": ">=1",
+    "wrangler": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "wrangler": {
+      "optional": false
+    }
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/node": "^25.9.0",
+    "miniflare": "^4.20260515.0",
+    "typescript": "^5.9.0",
+    "workerd": "^1.20250514.1",
+    "wrangler": "^4.92.0"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "bun",
+    "miniflare",
+    "workerd",
+    "native",
+    "compile",
+    "wrangler"
+  ]
+}
