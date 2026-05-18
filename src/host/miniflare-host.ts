@@ -1,6 +1,6 @@
 import { chmod, mkdir, realpath } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
-import type { MiniflareOptions } from "miniflare";
+import type { MiniflareOptions, WorkerOptions } from "miniflare";
 import { Miniflare } from "miniflare";
 import {
 	buildMiniflareWorkersArray,
@@ -30,6 +30,20 @@ export type RunMiniflareHostOptions = MiniflareHostEmbed & {
 	 * Use to tweak flags, persistence, or override bindings from Wrangler.
 	 */
 	miniflare?: Partial<MiniflareOptions>;
+	/**
+	 * Additional auxiliary workers to register in the **same** Miniflare instance so the primary
+	 * Worker's `services = [...]` / external Durable Object bindings resolve in-process without
+	 * needing Miniflare's dev registry (`unsafeDevRegistryPath`).
+	 *
+	 * Use this when a service binding targets a Worker owned by *this* process whose script is not
+	 * declared in the primary's `wrangler.toml` (so Wrangler does not surface it in
+	 * `externalWorkers`). Each entry must include a `name` matching the `service` binding's
+	 * `service` field (and, for module workers, either `script` or `scriptPath`).
+	 *
+	 * Entries are merged with Wrangler-discovered auxiliary workers and deduplicated by `name`;
+	 * extras override on conflict. The primary worker is never replaced.
+	 */
+	extraWorkers?: WorkerOptions[];
 };
 
 function pathLooksLikeBunFsEmbed(p: string): boolean {
@@ -181,7 +195,11 @@ export async function runMiniflareHost(
 		envName: wranglerEnv,
 	});
 
-	const workers = buildMiniflareWorkersArray(wranglerFragment, bundlePath!);
+	const workers = buildMiniflareWorkersArray(
+		wranglerFragment,
+		bundlePath!,
+		options.extraWorkers ?? [],
+	);
 	const primary = workers[0];
 	if (primary && Bun.env.WRANGLER_COMPATIBILITY_DATE) {
 		primary.compatibilityDate = Bun.env.WRANGLER_COMPATIBILITY_DATE;
@@ -219,11 +237,17 @@ export async function runMiniflareHost(
 		? `embedded (${Bun.env.MINIFLARE_WORKERD_PATH ?? "unset"})`
 		: (Bun.env.MINIFLARE_WORKERD_PATH ?? "resolved by Miniflare / npm workerd");
 
+	const finalWorkers = (overrides.workers ?? workers) as WorkerOptions[];
+	const workerNames = finalWorkers
+		.map((w, i) => w.name ?? (i === 0 ? "<primary>" : `<worker-${i}>`))
+		.join(", ");
+
 	console.error(
 		`[native-worker miniflare] Listening at ${url.origin}\n` +
 			`[native-worker miniflare] Worker bundle: ${bundleNote}\n` +
 			`[native-worker miniflare] workerd: ${runtimeNote}\n` +
-			`[native-worker miniflare] Persist root: ${persistRoot}`,
+			`[native-worker miniflare] Persist root: ${persistRoot}\n` +
+			`[native-worker miniflare] Workers: ${workerNames}`,
 	);
 
 	const dispose = async () => {

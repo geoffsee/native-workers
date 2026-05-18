@@ -14,7 +14,11 @@ import { writeCompileGateway } from "../src/build/write-compile-gateway.ts";
 import { writeEmbedManifest } from "../src/build/embed-manifest.ts";
 import { resolveBunCompileTarget } from "../src/build/bun-compile-target.ts";
 import { canonicalAppRoot } from "../src/host/miniflare-host.ts";
-import { loadWranglerMiniflareFragment } from "../src/host/load-wrangler-miniflare.ts";
+import {
+	buildMiniflareWorkersArray,
+	loadWranglerMiniflareFragment,
+	type WranglerMiniflareFragment,
+} from "../src/host/load-wrangler-miniflare.ts";
 
 describe("paths-generated", () => {
 	test("default cache dir naming", () => {
@@ -111,6 +115,63 @@ describe("loadWranglerMiniflareFragment", () => {
 			type: "kv_namespace",
 		});
 		expect(workerOptions.kvNamespaces?.TASK_KV).toBeDefined();
+	});
+});
+
+describe("buildMiniflareWorkersArray", () => {
+	function fragmentWith(
+		externalWorkers: any[],
+		name = "primary",
+	): WranglerMiniflareFragment {
+		return {
+			config: { name } as any,
+			startWorkerBindings: {},
+			workerOptions: {} as any,
+			externalWorkers: externalWorkers as any,
+		};
+	}
+
+	test("primary is index 0 and Wrangler externals follow", () => {
+		const out = buildMiniflareWorkersArray(
+			fragmentWith([{ name: "aux", modules: true, script: "" }]),
+			"/abs/bundle.js",
+		);
+		expect(out).toHaveLength(2);
+		expect(out[0]?.name).toBe("primary");
+		expect((out[0] as any).scriptPath).toBe("/abs/bundle.js");
+		expect(out[1]?.name).toBe("aux");
+	});
+
+	test("extras are merged with Wrangler externals", () => {
+		const out = buildMiniflareWorkersArray(
+			fragmentWith([{ name: "aux1", modules: true, script: "" }]),
+			"/abs/bundle.js",
+			[{ name: "aux2", modules: true, script: "" }],
+		);
+		expect(out.map((w) => w.name)).toEqual(["primary", "aux1", "aux2"]);
+	});
+
+	test("extras override Wrangler externals with the same name (last-wins)", () => {
+		const out = buildMiniflareWorkersArray(
+			fragmentWith([
+				{ name: "aux", modules: true, script: "from-wrangler" },
+			]),
+			"/abs/bundle.js",
+			[{ name: "aux", modules: true, script: "from-extra" }],
+		);
+		expect(out).toHaveLength(2);
+		expect((out[1] as any).script).toBe("from-extra");
+	});
+
+	test("primary cannot be displaced by an extra with the same name", () => {
+		const out = buildMiniflareWorkersArray(
+			fragmentWith([], "primary"),
+			"/abs/bundle.js",
+			[{ name: "primary", modules: true, script: "evil" }],
+		);
+		expect(out).toHaveLength(1);
+		expect(out[0]?.name).toBe("primary");
+		expect((out[0] as any).scriptPath).toBe("/abs/bundle.js");
 	});
 });
 

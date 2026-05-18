@@ -77,10 +77,28 @@ export function loadWranglerMiniflareFragment(
 	};
 }
 
-/** Primary worker first (served entrypoint), then any auxiliary workers required by bindings. */
+/**
+ * Primary worker first (served entrypoint), then any auxiliary workers required by bindings.
+ *
+ * Implements the "single Miniflare, multiple workers" topology: every Worker that the primary's
+ * service / Durable Object bindings reference is included in the resulting array so Miniflare
+ * routes between them in-process — no `unsafeDevRegistryPath` needed.
+ *
+ * The array is composed of:
+ *   1. The primary worker built from {@link fragment.workerOptions} and {@link bundlePath}.
+ *   2. Auxiliary workers Wrangler discovered (`externalWorkers`) for bindings whose target is
+ *      defined inside the same Wrangler config.
+ *   3. Caller-supplied {@link extraWorkers} — used to register additional locally-known Workers
+ *      that Wrangler did not surface (e.g. bundles owned by this same process but not present in
+ *      the primary's `wrangler.toml`).
+ *
+ * Entries are deduplicated by `name`; later entries override earlier ones, so {@link extraWorkers}
+ * can replace an auto-derived auxiliary worker (last-wins). The primary keeps index 0 regardless.
+ */
 export function buildMiniflareWorkersArray(
 	fragment: WranglerMiniflareFragment,
 	bundlePath: string,
+	extraWorkers: WorkerOptions[] = [],
 ): WorkerOptions[] {
 	const { workerOptions, externalWorkers, config } = fragment;
 	const primary: WorkerOptions = {
@@ -89,5 +107,18 @@ export function buildMiniflareWorkersArray(
 		...(config.name !== undefined ? { name: config.name } : {}),
 		...workerOptions,
 	};
-	return [primary, ...externalWorkers];
+
+	const byName = new Map<string | undefined, WorkerOptions>();
+	// Primary always wins index 0; track its name so auxiliaries can't displace it.
+	const primaryName = primary.name;
+	for (const w of externalWorkers) {
+		if (w.name !== undefined && w.name === primaryName) continue;
+		byName.set(w.name, w);
+	}
+	for (const w of extraWorkers) {
+		if (w.name !== undefined && w.name === primaryName) continue;
+		byName.set(w.name, w);
+	}
+
+	return [primary, ...byName.values()];
 }
