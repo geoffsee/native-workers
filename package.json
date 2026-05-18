@@ -1,8 +1,12 @@
 {
   "name": "native-workers",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Build Bun native executables for Cloudflare Workers using Wrangler bundles, Miniflare, and embedded workerd.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/geoffsee/native-workers"
+  },
   "type": "module",
   "bin": {
     "native-worker": "./src/cli.ts"
