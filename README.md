@@ -2,6 +2,8 @@
 
 Compiles Cloudflare Workers into native executables — ship a Worker as a single binary you can run anywhere, with or without an embedded `workerd` runtime.
 
+> ⚠️ **Not recommended for production.** This project is experimental and intended for local development, demos, prototyping, and offline/edge-of-network scenarios. It is **not** a substitute for deploying Workers to Cloudflare's edge: it has not been hardened for production workloads, makes no guarantees about security, performance, stability, or parity with the Cloudflare Workers runtime, and may change in breaking ways. Use at your own risk.
+
 ## Requirements
 
 - [Bun](https://bun.sh) (for `Bun.build` / `compile`)
