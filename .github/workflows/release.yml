@@ -56,8 +56,11 @@ jobs:
       - name: Setup Node (for npm publish)
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           registry-url: "https://registry.npmjs.org"
+
+      - name: Upgrade npm (required for OIDC trusted publishing)
+        run: npm install -g npm@latest
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -67,10 +70,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Publish
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish via npm trusted publishing (OIDC)
+        run: npm publish --access public
 
   github-release:
     name: create GitHub Release
