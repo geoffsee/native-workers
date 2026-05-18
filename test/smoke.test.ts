@@ -6,6 +6,7 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { Miniflare } from "miniflare";
 import { embedManifestPath, compileGatewayPath } from "../src/build/paths-generated.ts";
 import {
 	resolveBundledJsEntry,
@@ -105,11 +106,40 @@ describe("resolveBunCompileTarget", () => {
 });
 
 describe("loadWranglerMiniflareFragment", () => {
-	test("reads KV bindings from demo app wrangler config via Wrangler unstable APIs", () => {
-		const appRoot = join(import.meta.dir, "../../../app");
+	let fixtureDir: string;
+	afterAll(async () => {
+		if (fixtureDir) await rm(fixtureDir, { recursive: true, force: true });
+	});
+
+	test("reads KV bindings from a wrangler.jsonc via Wrangler unstable APIs", async () => {
+		// Self-contained fixture: write a minimal wrangler.jsonc into a tmp dir, and
+		// resolve `wrangler` from this project's root (where it is a devDependency).
+		// Previously this pointed at `../../../app`, which only existed on one machine.
+		fixtureDir = await mkdtemp(join(tmpdir(), "wn-wrangler-cfg-"));
+		const configPath = join(fixtureDir, "wrangler.jsonc");
+		await writeFile(
+			configPath,
+			JSON.stringify({
+				name: "fixture-worker",
+				main: "worker.js",
+				compatibility_date: "2024-09-23",
+				kv_namespaces: [
+					{ binding: "TASK_KV", id: "0000000000000000000000000000aaaa" },
+				],
+			}),
+			"utf8",
+		);
+		// Touch a main file so wrangler config validation is happy.
+		await writeFile(
+			join(fixtureDir, "worker.js"),
+			"export default { fetch() { return new Response('ok'); } };",
+			"utf8",
+		);
+
+		const appRoot = join(import.meta.dir, "..");
 		const { startWorkerBindings, workerOptions } = loadWranglerMiniflareFragment({
 			appRoot,
-			configPath: join(appRoot, "wrangler.jsonc"),
+			configPath,
 		});
 		expect(startWorkerBindings.TASK_KV).toMatchObject({
 			type: "kv_namespace",
@@ -173,6 +203,73 @@ describe("buildMiniflareWorkersArray", () => {
 		expect(out[0]?.name).toBe("primary");
 		expect((out[0] as any).scriptPath).toBe("/abs/bundle.js");
 	});
+});
+
+describe("buildMiniflareWorkersArray + Miniflare (integration)", () => {
+	let dir: string;
+	let mf: Miniflare | undefined;
+	afterAll(async () => {
+		if (mf) await mf.dispose();
+		if (dir) await rm(dir, { recursive: true, force: true });
+	});
+
+	test("primary worker routes a request through a service binding to an aux worker registered via extraWorkers", async () => {
+		const realTmp = await (await import("node:fs/promises")).realpath(tmpdir());
+		dir = await mkdtemp(join(realTmp, "wn-svc-binding-"));
+
+		const fragment: WranglerMiniflareFragment = {
+			config: { name: "primary" } as any,
+			startWorkerBindings: {},
+			workerOptions: {
+				compatibilityDate: "2024-09-23",
+				scriptPath: undefined,
+				modules: [
+					{
+						type: "ESModule",
+						path: "primary.js",
+						contents: `export default {
+							async fetch(req, env) {
+								const downstream = await env.AUX.fetch("https://aux.internal/ping");
+								const body = await downstream.text();
+								return new Response("primary->" + body, { status: 200 });
+							},
+						};`,
+					},
+				],
+				serviceBindings: { AUX: "aux" },
+			} as any,
+			externalWorkers: [] as any,
+		};
+
+		const auxExtra = {
+			name: "aux",
+			modules: true,
+			compatibilityDate: "2024-09-23",
+			script:
+				`export default { async fetch() { return new Response("hello-from-aux"); } };`,
+		};
+
+		// bundlePath is unused because workerOptions.modules takes precedence in spread order.
+		const workers = buildMiniflareWorkersArray(
+			fragment,
+			join(dir, "unused.js"),
+			[auxExtra as any],
+		);
+		expect(workers.map((w) => w.name)).toEqual(["primary", "aux"]);
+
+		mf = new Miniflare({
+			host: "127.0.0.1",
+			port: 0,
+			telemetry: { enabled: false },
+			liveReload: false,
+			workers: workers as any,
+		});
+
+		const url = await mf.ready;
+		const res = await fetch(new URL("/", url));
+		expect(res.status).toBe(200);
+		expect(await res.text()).toBe("primary->hello-from-aux");
+	}, 30_000);
 });
 
 describe("canonicalAppRoot", () => {
