@@ -1,0 +1,4 @@
+[[extra_workers]]
+name = "ex03-auth-worker"
+modules = true
+script_path = "./callee/src/index.ts"

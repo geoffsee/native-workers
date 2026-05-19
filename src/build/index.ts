@@ -16,7 +16,11 @@ export {
 export { resolveBundledJsEntry } from "./resolve-bundle-entry.ts";
 export { createWorkerdBundlerPlugin } from "./workerd-bundler-plugin.ts";
 export { resolveWorkerdExecutable } from "./workerd-path.ts";
-export { runWranglerDeployDryRun, type WranglerDryRunResult } from "./wrangler-dry-run.ts";
+export {
+	runWranglerDeployDryRun,
+	type WranglerDryRunOptions,
+	type WranglerDryRunResult,
+} from "./wrangler-dry-run.ts";
 export { writeCompileGateway } from "./write-compile-gateway.ts";
 export {
 	buildNativePipeline,

@@ -6,6 +6,7 @@ import {
 	buildMiniflareWorkersArray,
 	loadWranglerMiniflareFragment,
 } from "./load-wrangler-miniflare.ts";
+import { loadNativeWorkerConfigExtraWorkers } from "./native-worker-config.ts";
 
 export type MiniflareHostEmbed = {
 	embeddedWorkerdPath?: string;
@@ -25,6 +26,11 @@ export type RunMiniflareHostOptions = MiniflareHostEmbed & {
 	wranglerProjectRoot?: string;
 	/** Wrangler named environment (e.g. `staging`). */
 	wranglerEnv?: string;
+	/**
+	 * Path to `native-worker.toml` (absolute or relative to app root).
+	 * Default: `<app root>/native-worker.toml` if present.
+	 */
+	nativeWorkerConfigPath?: string;
 	/**
 	 * Partial options merged into sensible defaults (after bundle path resolution).
 	 * Use to tweak flags, persistence, or override bindings from Wrangler.
@@ -186,6 +192,16 @@ export async function runMiniflareHost(
 		Bun.env.WRANGLER_CONFIG_PATH;
 	const wranglerEnv =
 		options.wranglerEnv ?? Bun.env.WRANGLER_ENV ?? Bun.env.CF_ENVIRONMENT;
+	const nativeWorkerConfigPath =
+		options.nativeWorkerConfigPath ?? Bun.env.NATIVE_WORKER_CONFIG;
+
+	const configExtraWorkers = await loadNativeWorkerConfigExtraWorkers({
+		appRoot: appRootResolved,
+		configPath: nativeWorkerConfigPath,
+		logger: (message) => console.error(message),
+	});
+	const callerExtraWorkers = options.extraWorkers ?? [];
+	const mergedExtraWorkers = [...configExtraWorkers, ...callerExtraWorkers];
 
 	const wranglerFragment = loadWranglerMiniflareFragment({
 		appRoot: wranglerModuleRoot,
@@ -198,7 +214,7 @@ export async function runMiniflareHost(
 	const workers = buildMiniflareWorkersArray(
 		wranglerFragment,
 		bundlePath!,
-		options.extraWorkers ?? [],
+		mergedExtraWorkers,
 	);
 	const primary = workers[0];
 	if (primary && Bun.env.WRANGLER_COMPATIBILITY_DATE) {

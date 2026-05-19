@@ -1,0 +1,7 @@
+name = "ex03-service-caller"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+[[services]]
+binding = "AUTH"
+service = "ex03-auth-worker"

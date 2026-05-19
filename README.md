@@ -166,7 +166,34 @@ bunx native-workers build --project ./caller --miniflare
 
 ### Case 2 — callee is owned by your process but **not** in Wrangler config
 
-When the callee's script is bundled by *your* process (for example, you want to register an ad-hoc Worker that isn't in the primary's `wrangler.toml`), pass it via `extraWorkers` on the programmatic API. Each entry must set `name` to match the `service` field declared in the caller's binding:
+When the callee's script is bundled by *your* process (for example, you want to register an ad-hoc Worker that isn't in the primary's `wrangler.toml`), you can now declare it in an opt-in `native-worker.toml` file at your app root:
+
+```toml
+[[extra_workers]]
+name = "auth-worker" # must match [[services]].service in the caller
+script_path = "./dist/auth/index.js"
+modules = true
+
+# Optional: auto-bundle this extra worker with wrangler deploy --dry-run
+[[extra_workers]]
+name = "billing-worker"
+wrangler_project_root = "../billing-worker"
+wrangler_config_path = "wrangler.toml" # optional
+wrangler_env = "staging"               # optional
+bundle_outdir = "dist/worker"          # optional (default: dist/worker)
+```
+
+`native-worker.toml` is optional. If present, `extra_workers` are loaded automatically by `native-worker serve` / `runMiniflareHost`.
+
+You can still pass `extraWorkers` on the programmatic API. Runtime precedence is:
+
+1. Wrangler-discovered `externalWorkers`
+2. `native-worker.toml` `extra_workers`
+3. `runMiniflareHost({ extraWorkers })` (highest precedence)
+
+All auxiliary workers are deduplicated by `name` (last-wins), and the primary worker always stays at index 0.
+
+Programmatic `extraWorkers` remains available when you prefer code-driven wiring:
 
 ```ts
 import { runMiniflareHost } from "native-workers/host";
@@ -184,6 +211,17 @@ await runMiniflareHost({
 ```
 
 `extraWorkers` are merged with Wrangler-discovered auxiliary workers and deduplicated by `name` (extras win on conflict). The primary Worker always stays at index 0 and is never replaced.
+
+### Binding verification examples
+
+Runnable binding scenarios live under `./examples`, with an explicit working/not-working matrix:
+
+- `examples/01-vars-and-durable-object`
+- `examples/02-service-binding-wrangler-workers`
+- `examples/03-service-binding-native-config`
+- `examples/04-service-binding-missing-worker` (expected request-time failure)
+
+See `examples/README.md` for exact commands and expected outcomes.
 
 ### Overriding bindings entirely
 
@@ -213,6 +251,7 @@ Use patch/minor/major interactively, or e.g. `bun run release -- minor`.
 ## Limitations / notes
 
 - **Bindings** for `runMiniflareHost` / `serve` are loaded from your Wrangler config using Wrangler’s **`unstable_readConfig`**, **`unstable_convertConfigBindingsToStartWorkerBindings`** (same normalized shape as for `startRemoteProxySession`), and **`unstable_getMiniflareWorkerOptions`** so Miniflare matches Wrangler’s local-dev binding layout (KV namespaces, vars, etc.). Override with `runMiniflareHost({ miniflare: { … } })` or `--config` / `--env` on the CLI.
+- **Opt-in extra worker config:** `native-worker.toml` is auto-discovered from app root. Override path with `--native-config` or `NATIVE_WORKER_CONFIG`. Each `[[extra_workers]]` entry can point at `script_path` or trigger a Wrangler dry-run bundle via `wrangler_project_root` (+ optional `wrangler_config_path`, `wrangler_env`, `bundle_outdir`).
 - **`wrangler` must resolve** from the app’s `package.json` (via `createRequire`). If `APP_DIR` is a disposable directory, set **`WRANGLER_PROJECT_ROOT`** (or `runMiniflareHost({ wranglerProjectRoot })`) to your real Worker project so Node can find `node_modules/wrangler` while persistence still uses `APP_DIR`.
 - Runtime layout expects materialized bundles under **`$APP_DIR/dist/worker`** and persistence under **`$APP_DIR/dist/miniflare-storage`** by default (`APP_DIR` env or current working directory after `chdir`).
 
