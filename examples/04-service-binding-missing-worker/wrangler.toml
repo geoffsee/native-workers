@@ -1,7 +1,0 @@
-name = "ex04-service-caller-missing"
-main = "src/index.ts"
-compatibility_date = "2024-09-23"
-
-[[services]]
-binding = "MISSING"
-service = "ex04-remote-service"

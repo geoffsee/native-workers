@@ -10,5 +10,6 @@
     "allowImportingTsExtensions": true,
     "isolatedModules": true
   },
-  "include": ["src/**/*", "test/**/*"]
+  "include": ["src/**/*", "test/**/*", "scripts/**/*"],
+  "exclude": ["examples/upstream/**", "node_modules"]
 }

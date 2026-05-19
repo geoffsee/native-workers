@@ -1,0 +1,37 @@
+{
+	"generatedBy": "scripts/sync-examples.ts",
+	"repo": "cloudflare/workers-sdk",
+	"commit": "c7eab7f435771de716f2c59597506f6f2fcf69be",
+	"fixtures": [
+		{
+			"localName": "workers-with-assets-and-service-bindings",
+			"path": "fixtures/workers-with-assets-and-service-bindings",
+			"phase": 1,
+			"fileCount": 28
+		},
+		{
+			"localName": "dev-registry",
+			"path": "fixtures/dev-registry",
+			"phase": 1,
+			"fileCount": 8
+		},
+		{
+			"localName": "durable-objects-app",
+			"path": "fixtures/durable-objects-app",
+			"phase": 1,
+			"fileCount": 7
+		},
+		{
+			"localName": "unbound-durable-object",
+			"path": "fixtures/unbound-durable-object",
+			"phase": 1,
+			"fileCount": 7
+		},
+		{
+			"localName": "worker-with-resources",
+			"path": "fixtures/worker-with-resources",
+			"phase": 2,
+			"fileCount": 11
+		}
+	]
+}

@@ -214,14 +214,18 @@ await runMiniflareHost({
 
 ### Binding verification examples
 
-Runnable binding scenarios live under `./examples`, with an explicit working/not-working matrix:
+Runnable binding scenarios live under `./examples/upstream`. They are **imported** (not hand-written) from a pinned commit of [`cloudflare/workers-sdk`](https://github.com/cloudflare/workers-sdk) so the bindings we exercise track real-world fixtures instead of drifting on their own.
 
-- `examples/01-vars-and-durable-object`
-- `examples/02-service-binding-wrangler-workers`
-- `examples/03-service-binding-native-config`
-- `examples/04-service-binding-missing-worker` (expected request-time failure)
+- The pinned upstream commit and curated fixture subset are tracked in [`examples/upstream.lock.json`](./examples/upstream.lock.json).
+- Resync (or refresh after bumping the commit) with:
 
-See `examples/README.md` for exact commands and expected outcomes.
+  ```bash
+  bun run scripts/sync-examples.ts
+  ```
+
+- The verification matrix — fixture → working / expected-failure → exact `native-workers serve` command (including any `--config` / `--env` / `--native-config` flag) — lives in [`examples/README.md`](./examples/README.md).
+
+The matrix is intentionally focused on **binding behavior** (which shapes work, which fail at request time, why) and links back here for implementation details.
 
 ### Overriding bindings entirely
 
@@ -232,9 +236,11 @@ For total control, pass `miniflare: { workers: [...] }` to `runMiniflareHost` to
 From this package directory:
 
 ```bash
-bun test
+bun run test
 bun run typecheck
 ```
+
+> Note: use `bun run test` (which scopes to `./test`). A bare `bun test` would also walk into `examples/upstream/**`, which contains imported `vitest-pool-workers` tests that are not meant to run here.
 
 ## Releasing (maintainers)
 

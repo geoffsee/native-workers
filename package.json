@@ -34,7 +34,8 @@
     }
   },
   "scripts": {
-    "test": "bun test",
+    "test": "bun test ./test",
+    "sync-examples": "bun run scripts/sync-examples.ts",
     "typecheck": "tsc --noEmit",
     "release": "release-it"
   },

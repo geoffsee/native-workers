@@ -1,0 +1,41 @@
+{
+	"$schema": "./upstream.lock.schema.json",
+	"description": "Pinned subset of cloudflare/workers-sdk fixtures imported into examples/upstream/ via scripts/sync-examples.ts. Edit this file (not the imported tree) and re-run the sync script.",
+	"repo": "cloudflare/workers-sdk",
+	"commit": "c7eab7f435771de716f2c59597506f6f2fcf69be",
+	"destRoot": "examples/upstream",
+	"fixtures": [
+		{
+			"path": "fixtures/workers-with-assets-and-service-bindings",
+			"localName": "workers-with-assets-and-service-bindings",
+			"phase": 1
+		},
+		{
+			"path": "fixtures/dev-registry",
+			"localName": "dev-registry",
+			"phase": 1,
+			"include": [
+				"workers/**",
+				"wrangler.internal-durable-object.jsonc",
+				"wrangler.external-durable-object.jsonc",
+				"wrangler.nonexistent-durable-object.jsonc",
+				"wrangler.nonexistent-entrypoint.jsonc"
+			]
+		},
+		{
+			"path": "fixtures/durable-objects-app",
+			"localName": "durable-objects-app",
+			"phase": 1
+		},
+		{
+			"path": "fixtures/unbound-durable-object",
+			"localName": "unbound-durable-object",
+			"phase": 1
+		},
+		{
+			"path": "fixtures/worker-with-resources",
+			"localName": "worker-with-resources",
+			"phase": 2
+		}
+	]
+}
