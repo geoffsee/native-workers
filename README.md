@@ -231,6 +231,110 @@ The matrix is intentionally focused on **binding behavior** (which shapes work, 
 
 For total control, pass `miniflare: { workers: [...] }` to `runMiniflareHost` to bypass Wrangler-derived bindings and supply the full Miniflare worker array yourself.
 
+## `worker-native.toml` reference
+
+`worker-native.toml` is an **optional** opt-in config file, auto-discovered at your app root. It lets you register auxiliary Workers that aren't surfaced by Wrangler (see [Case 2](#case-2--callee-is-owned-by-your-process-but-not-in-wrangler-config) above) without writing code. It is loaded by `worker-native serve` and `runMiniflareHost`.
+
+### Discovery
+
+Resolution order (highest precedence first):
+
+1. CLI flag: `--native-config <path>`
+2. Environment variable: `WORKER_NATIVE_CONFIG=<path>`
+3. Default: `<app root>/worker-native.toml` (silently ignored if absent)
+
+Relative paths inside the file (e.g. `script_path`, `wrangler_project_root`) are resolved **relative to the directory containing `worker-native.toml`**.
+
+### Top-level schema
+
+```toml
+# Zero or more auxiliary Workers, each as its own [[extra_workers]] table.
+[[extra_workers]]
+name = "auth-worker"
+# ... fields below ...
+```
+
+Only `[[extra_workers]]` is currently recognized at the top level. Unknown keys are ignored.
+
+### `[[extra_workers]]` fields
+
+Each entry **must** provide a `name` and **exactly one** script source:
+
+- a literal `script`, **or**
+- a `script_path`, **or**
+- one or more `wrangler_*` fields (triggers an automatic `wrangler deploy --dry-run` bundle).
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `name` | string | ✅ | — | Worker name. Must match the `[[services]].service` value in the caller's `wrangler.toml`. Duplicate names are deduplicated (last wins); the primary Worker always stays at index 0. |
+| `modules` | boolean | | `true` | Whether the script is an ES module Worker (`export default { fetch }`). Set to `false` for service-worker style scripts. |
+| `script` | string | one-of | — | Inline Worker source code. Mutually exclusive with `script_path`. |
+| `script_path` | string | one-of | — | Path to a pre-bundled Worker entry file, resolved relative to the config directory. Mutually exclusive with `script`. Aliases: `scriptPath`. |
+| `compatibility_date` | string | | inherited from Miniflare | Per-worker compatibility date (e.g. `"2025-01-01"`). Alias: `compatibilityDate`. |
+| `compatibility_flags` | string[] | | `[]` | Per-worker compatibility flags. Alias: `compatibilityFlags`. |
+| `wrangler_project_root` | string | one-of | — | Path to a Wrangler project to bundle on the fly via `wrangler deploy --dry-run`. Triggers wrangler-bundle mode. Alias: `wranglerProjectRoot`. |
+| `wrangler_config_path` | string | | auto | Optional path (relative to `wrangler_project_root`) to a specific `wrangler.toml` / `wrangler.jsonc`. Alias: `wranglerConfigPath`. |
+| `wrangler_env` | string | | — | Wrangler environment to use for the dry-run bundle (e.g. `"staging"`). Alias: `wranglerEnv`. |
+| `bundle_outdir` | string | | `"dist/worker"` | Output directory (relative to `wrangler_project_root`) where the dry-run bundle is materialized and from which it is loaded. Aliases: `bundleOutdir`, `bundle_outdir_relative`, `bundleOutdirRelative`. |
+
+Both `snake_case` (TOML-idiomatic) and `camelCase` spellings are accepted for every multi-word key.
+
+### Examples
+
+Pre-bundled script:
+
+```toml
+[[extra_workers]]
+name = "auth-worker"
+script_path = "./dist/auth/index.js"
+modules = true
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+```
+
+Inline script (handy for tiny stubs):
+
+```toml
+[[extra_workers]]
+name = "echo-worker"
+script = """
+export default {
+  fetch(req) { return new Response('ok'); }
+};
+"""
+```
+
+Auto-bundle from another Wrangler project:
+
+```toml
+[[extra_workers]]
+name = "billing-worker"
+wrangler_project_root = "../billing-worker"
+wrangler_config_path = "wrangler.toml" # optional
+wrangler_env = "staging"               # optional
+bundle_outdir = "dist/worker"          # optional (default)
+```
+
+### Precedence with other sources
+
+When the same Worker `name` is supplied from multiple places, the runtime merges and deduplicates them in this order (lowest → highest precedence):
+
+1. Wrangler-discovered `externalWorkers` (from `unstable_getMiniflareWorkerOptions`).
+2. `worker-native.toml` `[[extra_workers]]`.
+3. Programmatic `runMiniflareHost({ extraWorkers })`.
+
+The primary Worker always remains at index 0 and is never replaced.
+
+### Validation errors
+
+Common errors raised while loading the file (all prefixed with `worker-native.toml`):
+
+- Root must be a TOML table/object.
+- `extra_workers` must be an array of tables.
+- Each entry must be a table and must include a non-empty `name`.
+- An entry cannot set both `script` and `script_path`.
+- An entry must set one of `script`, `script_path`, or any `wrangler_*` bundle field.
+
 ## Tests
 
 From this package directory:
