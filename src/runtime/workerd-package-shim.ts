@@ -9,7 +9,7 @@
  */
 
 export const compatibilityDate = "2026-05-18";
-export const version = "0.0.0-native-worker-shim";
+export const version = "0.0.0-worker-native-shim";
 
 const fallbackPath =
 	"/__embedded_worker_native__/workerd-placeholder-if-env-unset";

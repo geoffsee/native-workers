@@ -38,7 +38,7 @@ export type BuildNativePipelineResult = {
 };
 
 function log(phase: string, message: string, logger?: (m: string) => void) {
-	const line = `[native-worker:${phase}] ${message}`;
+	const line = `[worker-native:${phase}] ${message}`;
 	(logger ?? console.error)(line);
 }
 

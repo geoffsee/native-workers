@@ -53,7 +53,7 @@ export function loadWranglerMiniflareFragment(
 		wrangler = req("wrangler") as WranglerModule;
 	} catch (e) {
 		throw new Error(
-			`native-worker could not resolve the "wrangler" package from ${args.appRoot}. Add wrangler as a dependency.`,
+			`worker-native could not resolve the "wrangler" package from ${args.appRoot}. Add wrangler as a dependency.`,
 			{ cause: e },
 		);
 	}

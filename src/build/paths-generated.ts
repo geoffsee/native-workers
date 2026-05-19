@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-export const WORKER_NATIVE_CACHE_DIR_NAME = ".native-worker";
+export const WORKER_NATIVE_CACHE_DIR_NAME = ".worker-native";
 
 export function defaultWorkerNativeGeneratedDir(projectRoot: string): string {
 	return join(projectRoot, WORKER_NATIVE_CACHE_DIR_NAME);

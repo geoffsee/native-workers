@@ -3,7 +3,7 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { loadNativeWorkerConfigExtraWorkers } from "../src/host/native-worker-config.ts";
+import { loadNativeWorkerConfigExtraWorkers } from "../src/host/worker-native-config.ts";
 
 describe("loadNativeWorkerConfigExtraWorkers", () => {
 	const tmpRoots: string[] = [];
@@ -14,7 +14,7 @@ describe("loadNativeWorkerConfigExtraWorkers", () => {
 		);
 	});
 
-	test("returns empty array when default native-worker.toml is missing", async () => {
+	test("returns empty array when default worker-native.toml is missing", async () => {
 		const root = await mkdtemp(join(tmpdir(), "wn-native-config-missing-"));
 		tmpRoots.push(root);
 
@@ -29,7 +29,7 @@ describe("loadNativeWorkerConfigExtraWorkers", () => {
 		await expect(
 			loadNativeWorkerConfigExtraWorkers({
 				appRoot: root,
-				configPath: "./native-worker.toml",
+				configPath: "./worker-native.toml",
 			}),
 		).rejects.toThrow(/config file not found/i);
 	});
@@ -46,7 +46,7 @@ script_path = "./dist/auth/index.js"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 `;
-		await writeFile(join(root, "native-worker.toml"), config, "utf8");
+		await writeFile(join(root, "worker-native.toml"), config, "utf8");
 
 		const out = await loadNativeWorkerConfigExtraWorkers({ appRoot: root });
 		expect(out).toHaveLength(1);
@@ -68,7 +68,7 @@ compatibility_flags = ["nodejs_compat"]
 name = "aux-inline"
 script = "export default { async fetch(){ return new Response('ok'); } };"
 `;
-		await writeFile(join(root, "native-worker.toml"), config, "utf8");
+		await writeFile(join(root, "worker-native.toml"), config, "utf8");
 
 		const out = await loadNativeWorkerConfigExtraWorkers({ appRoot: root });
 		expect(out).toHaveLength(1);
@@ -91,7 +91,7 @@ compatibilityDate = "2025-01-01"
 compatibilityFlags = ["nodejs_compat"]
 bundleOutdirRelative = "dist/custom"
 `;
-		await writeFile(join(root, "native-worker.toml"), config, "utf8");
+		await writeFile(join(root, "worker-native.toml"), config, "utf8");
 
 		const out = await loadNativeWorkerConfigExtraWorkers({ appRoot: root });
 		expect(out).toHaveLength(1);
@@ -111,7 +111,7 @@ bundleOutdirRelative = "dist/custom"
 [[extra_workers]]
 script_path = "./dist/auth/index.js"
 `;
-		await writeFile(join(root, "native-worker.toml"), config, "utf8");
+		await writeFile(join(root, "worker-native.toml"), config, "utf8");
 
 		await expect(
 			loadNativeWorkerConfigExtraWorkers({ appRoot: root }),
@@ -126,7 +126,7 @@ script_path = "./dist/auth/index.js"
 [[extra_workers]]
 name = "empty-worker"
 `;
-		await writeFile(join(root, "native-worker.toml"), config, "utf8");
+		await writeFile(join(root, "worker-native.toml"), config, "utf8");
 
 		await expect(
 			loadNativeWorkerConfigExtraWorkers({ appRoot: root }),

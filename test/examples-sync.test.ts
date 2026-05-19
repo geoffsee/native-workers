@@ -125,7 +125,7 @@ describe("examples/README.md verification matrix", () => {
 		}
 	});
 
-	test("each row exposes a concrete `native-workers serve` command", () => {
+	test("each row exposes a concrete `workers-native serve` command", () => {
 		const rows = readme.split("\n").filter((line) => line.startsWith("| ") && line.includes(" | "));
 		// Skip the header + alignment rows; keep only data rows that name a fixture.
 		const dataRows = rows.filter((line) =>
@@ -133,7 +133,7 @@ describe("examples/README.md verification matrix", () => {
 		);
 		expect(dataRows.length).toBeGreaterThanOrEqual(EXPECTED_FIXTURES.length);
 		for (const row of dataRows) {
-			expect(row).toContain("native-workers serve");
+			expect(row).toContain("workers-native serve");
 			expect(row).toContain("--project ./examples/upstream/");
 		}
 	});

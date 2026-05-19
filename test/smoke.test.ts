@@ -25,10 +25,10 @@ describe("paths-generated", () => {
 	test("default cache dir naming", () => {
 		const root = join("/tmp", "proj");
 		expect(embedManifestPath(root)).toBe(
-			join(root, ".native-worker", "embed-manifest.ts"),
+			join(root, ".worker-native", "embed-manifest.ts"),
 		);
 		expect(compileGatewayPath(root)).toBe(
-			join(root, ".native-worker", "compile-gateway.ts"),
+			join(root, ".worker-native", "compile-gateway.ts"),
 		);
 	});
 });
@@ -84,13 +84,13 @@ describe("codegen", () => {
 		expect(txt).toContain('type: "file"');
 	});
 
-	test("writeCompileGateway imports native-worker/host", async () => {
+	test("writeCompileGateway imports worker-native/host", async () => {
 		const d = await mkdtemp(join(tmpdir(), "wn-gw-"));
 		try {
 			const p = join(d, "gate.ts");
 			await writeCompileGateway(p, { manifestImportPath: "./embed-manifest" });
 			const txt = await Bun.file(p).text();
-			expect(txt).toContain('native-worker/host');
+			expect(txt).toContain('worker-native/host');
 			expect(txt).toContain("MINIFLARE_WORKERD_PATH");
 		} finally {
 			await rm(d, { recursive: true, force: true });

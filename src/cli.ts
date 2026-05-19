@@ -6,17 +6,17 @@ import { runMiniflareHost } from "./host/miniflare-host.ts";
 const VERSION = "0.1.0";
 
 function printHelp(): void {
-	console.log(`native-worker ${VERSION}
+	console.log(`worker-native ${VERSION}
 
 Usage:
-  native-worker build [options]   Bundle with Wrangler, then Bun.compile
-  native-worker serve [options]    Run Miniflare locally (development)
+  worker-native build [options]   Bundle with Wrangler, then Bun.compile
+  worker-native serve [options]    Run Miniflare locally (development)
 
 Options:
   --project <dir>   Wrangler project root (default: current working directory)
   --config <file>   wrangler.toml / wrangler.json(c) path (serve; default: discover in project)
   --native-config <file>
-                    native-worker.toml path (serve; default: ./native-worker.toml if present)
+                    worker-native.toml path (serve; default: ./worker-native.toml if present)
   --env <name>      Wrangler environment name (serve)
   --wrangler-root <dir>
                     Directory whose package.json resolves wrangler (serve; default: project / APP_DIR)
@@ -31,7 +31,7 @@ Environment:
   MINIFLARE_WORKERD_PATH       External workerd binary (serve + runtime)
   WRANGLER_CONFIG, WRANGLER_CONFIG_PATH
                                Wrangler config path (serve + runtime)
-  NATIVE_WORKER_CONFIG         native-worker.toml path (serve + runtime; optional)
+  WORKER_NATIVE_CONFIG         worker-native.toml path (serve + runtime; optional)
   WRANGLER_PROJECT_ROOT        Package root that resolves the wrangler dependency (serve + runtime; optional if same as APP_DIR)
   WRANGLER_ENV, CF_ENVIRONMENT Wrangler environment name (serve + runtime)
   WRANGLER_COMPATIBILITY_DATE  Overrides compatibility_date from Wrangler config
@@ -122,6 +122,6 @@ async function main(): Promise<void> {
 }
 
 await main().catch((error) => {
-	console.error("[native-worker]", error);
+	console.error("[worker-native]", error);
 	process.exit(1);
 });

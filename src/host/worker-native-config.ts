@@ -110,14 +110,14 @@ function parseRawExtraWorker(
 } {
 	if (!isRecord(raw)) {
 		throw new Error(
-			`native-worker.toml extra_workers[${index}] must be a table/object.`,
+			`worker-native.toml extra_workers[${index}] must be a table/object.`,
 		);
 	}
 
 	const item = raw as NativeWorkerRawExtraWorker & Record<string, unknown>;
 	const name = readOptionalString(item, ["name"]);
 	if (!name || name.trim().length === 0) {
-		throw new Error(`native-worker.toml extra_workers[${index}].name is required.`);
+		throw new Error(`worker-native.toml extra_workers[${index}].name is required.`);
 	}
 
 	return {
@@ -158,7 +158,7 @@ async function resolveExtraWorker(
 ): Promise<NativeWorkerResolvedExtraWorker> {
 	if (raw.script && raw.scriptPath) {
 		throw new Error(
-			`native-worker.toml extra_workers "${raw.name}" cannot set both "script" and "script_path".`,
+			`worker-native.toml extra_workers "${raw.name}" cannot set both "script" and "script_path".`,
 		);
 	}
 
@@ -189,7 +189,7 @@ async function resolveExtraWorker(
 
 	if (!usesWranglerBundle) {
 		throw new Error(
-			`native-worker.toml extra_workers "${raw.name}" must set one of: script, script_path, or wrangler_* bundle fields.`,
+			`worker-native.toml extra_workers "${raw.name}" must set one of: script, script_path, or wrangler_* bundle fields.`,
 		);
 	}
 
@@ -197,7 +197,7 @@ async function resolveExtraWorker(
 	const bundleOutdirRelative = raw.bundleOutdirRelative ?? "dist/worker";
 
 	logger?.(
-		`[native-worker:config] Bundling extra worker "${raw.name}" from ${wranglerProjectRoot} -> ${bundleOutdirRelative}`,
+		`[worker-native:config] Bundling extra worker "${raw.name}" from ${wranglerProjectRoot} -> ${bundleOutdirRelative}`,
 	);
 
 	const wr = await runWranglerDeployDryRun(
@@ -227,20 +227,20 @@ export async function loadNativeWorkerConfigExtraWorkers(
 	const configPath =
 		args.configPath !== undefined
 			? resolve(args.appRoot, args.configPath)
-			: resolve(args.appRoot, "native-worker.toml");
+			: resolve(args.appRoot, "worker-native.toml");
 
 	const configFile = Bun.file(configPath);
 	const exists = await configFile.exists();
 	if (!exists) {
 		if (args.configPath !== undefined) {
-			throw new Error(`native-worker config file not found: ${configPath}`);
+			throw new Error(`worker-native config file not found: ${configPath}`);
 		}
 		return [];
 	}
 
 	const parsed = Bun.TOML.parse(await configFile.text()) as NativeWorkerRawConfig;
 	if (!isRecord(parsed)) {
-		throw new Error(`native-worker.toml must contain a TOML table/object root.`);
+		throw new Error(`worker-native.toml must contain a TOML table/object root.`);
 	}
 
 	const rawExtraWorkers = parsed.extra_workers;
@@ -248,7 +248,7 @@ export async function loadNativeWorkerConfigExtraWorkers(
 		return [];
 	}
 	if (!Array.isArray(rawExtraWorkers)) {
-		throw new Error(`native-worker.toml "extra_workers" must be an array of tables.`);
+		throw new Error(`worker-native.toml "extra_workers" must be an array of tables.`);
 	}
 
 	const configDir = dirname(configPath);

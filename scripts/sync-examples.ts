@@ -63,8 +63,8 @@ function loadLock(): Lock {
 }
 
 function fetchUpstream(lock: Lock): string {
-	const cache = process.env.NATIVE_WORKERS_SYNC_CACHE
-		?? join(tmpdir(), `native-workers-sync-${lock.commit}`);
+	const cache = process.env.WORKERS_NATIVE_SYNC_CACHE
+		?? join(tmpdir(), `workers-native-sync-${lock.commit}`);
 	if (existsSync(join(cache, ".git"))) {
 		return cache;
 	}
@@ -161,7 +161,7 @@ function writeReadme(lock: Lock): void {
 		"Do not edit files in this directory; edit `examples/upstream.lock.json` and",
 		"re-run the sync script instead. See `examples/README.md` for the verification",
 		"matrix that maps each fixture to expected outcome and the exact",
-		"`native-workers serve` command needed to exercise it.",
+		"`workers-native serve` command needed to exercise it.",
 		"",
 	];
 	writeFileSync(join(ROOT, lock.destRoot, "README.md"), lines.join("\n"), "utf8");
@@ -189,7 +189,7 @@ async function main(): Promise<void> {
 
 	if (check) {
 		// Build expected tree in a temp dir and diff against on-disk tree.
-		const expectedRoot = join(tmpdir(), `native-workers-expected-${lock.commit}`);
+		const expectedRoot = join(tmpdir(), `workers-native-expected-${lock.commit}`);
 		rmSync(expectedRoot, { recursive: true, force: true });
 		mkdirSync(expectedRoot, { recursive: true });
 		const counts: Record<string, number> = {};

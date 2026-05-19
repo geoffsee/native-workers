@@ -6,7 +6,7 @@ import {
 	buildMiniflareWorkersArray,
 	loadWranglerMiniflareFragment,
 } from "./load-wrangler-miniflare.ts";
-import { loadNativeWorkerConfigExtraWorkers } from "./native-worker-config.ts";
+import { loadNativeWorkerConfigExtraWorkers } from "./worker-native-config.ts";
 
 export type MiniflareHostEmbed = {
 	embeddedWorkerdPath?: string;
@@ -27,8 +27,8 @@ export type RunMiniflareHostOptions = MiniflareHostEmbed & {
 	/** Wrangler named environment (e.g. `staging`). */
 	wranglerEnv?: string;
 	/**
-	 * Path to `native-worker.toml` (absolute or relative to app root).
-	 * Default: `<app root>/native-worker.toml` if present.
+	 * Path to `worker-native.toml` (absolute or relative to app root).
+	 * Default: `<app root>/worker-native.toml` if present.
 	 */
 	nativeWorkerConfigPath?: string;
 	/**
@@ -62,7 +62,7 @@ export async function materializeEmbeddedWorkerd(
 ): Promise<string> {
 	const exe = process.platform === "win32" ? "workerd.exe" : "workerd";
 	const destDir = resolve(
-		join(appRootResolved, "dist", ".native-worker-embedded-runtime"),
+		join(appRootResolved, "dist", ".worker-native-embedded-runtime"),
 	);
 	await mkdir(destDir, { recursive: true });
 	const dest = resolve(join(destDir, exe));
@@ -116,7 +116,7 @@ export async function resolveBundledWorkerEntry(outDir: string): Promise<string>
 
 	if (matches.length === 0) {
 		throw new Error(
-			`No Wrangler bundle found in ${outDir}. Run wrangler deploy --dry-run --outdir, set WORKER_BUNDLE_PATH, or use embedded bundle paths from native-worker build.`,
+			`No Wrangler bundle found in ${outDir}. Run wrangler deploy --dry-run --outdir, set WORKER_BUNDLE_PATH, or use embedded bundle paths from worker-native build.`,
 		);
 	}
 
@@ -193,7 +193,7 @@ export async function runMiniflareHost(
 	const wranglerEnv =
 		options.wranglerEnv ?? Bun.env.WRANGLER_ENV ?? Bun.env.CF_ENVIRONMENT;
 	const nativeWorkerConfigPath =
-		options.nativeWorkerConfigPath ?? Bun.env.NATIVE_WORKER_CONFIG;
+		options.nativeWorkerConfigPath ?? Bun.env.WORKER_NATIVE_CONFIG;
 
 	const configExtraWorkers = await loadNativeWorkerConfigExtraWorkers({
 		appRoot: appRootResolved,
@@ -259,11 +259,11 @@ export async function runMiniflareHost(
 		.join(", ");
 
 	console.error(
-		`[native-worker miniflare] Listening at ${url.origin}\n` +
-			`[native-worker miniflare] Worker bundle: ${bundleNote}\n` +
-			`[native-worker miniflare] workerd: ${runtimeNote}\n` +
-			`[native-worker miniflare] Persist root: ${persistRoot}\n` +
-			`[native-worker miniflare] Workers: ${workerNames}`,
+		`[worker-native miniflare] Listening at ${url.origin}\n` +
+			`[worker-native miniflare] Worker bundle: ${bundleNote}\n` +
+			`[worker-native miniflare] workerd: ${runtimeNote}\n` +
+			`[worker-native miniflare] Persist root: ${persistRoot}\n` +
+			`[worker-native miniflare] Workers: ${workerNames}`,
 	);
 
 	const dispose = async () => {

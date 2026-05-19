@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SHIM_NAME = "native-worker-workerd-shim";
+const SHIM_NAME = "worker-worker-natived-shim";
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const shimAbs = join(thisDir, "..", "runtime", "workerd-package-shim.ts");
