@@ -198,6 +198,18 @@ bun test
 bun run typecheck
 ```
 
+## Releasing (maintainers)
+
+Releases use [release-it](https://github.com/release-it/release-it) locally to bump `package.json`, commit, tag (`v*` — must match CI), and push. **`npm publish` and GitHub Releases are handled by [.github/workflows/release.yml](.github/workflows/release.yml)** when the tag lands on the remote (trusted publishing via OIDC).
+
+With a clean working tree on `main`:
+
+```bash
+bun run release
+```
+
+Use patch/minor/major interactively, or e.g. `bun run release -- minor`.
+
 ## Limitations / notes
 
 - **Bindings** for `runMiniflareHost` / `serve` are loaded from your Wrangler config using Wrangler’s **`unstable_readConfig`**, **`unstable_convertConfigBindingsToStartWorkerBindings`** (same normalized shape as for `startRemoteProxySession`), and **`unstable_getMiniflareWorkerOptions`** so Miniflare matches Wrangler’s local-dev binding layout (KV namespaces, vars, etc.). Override with `runMiniflareHost({ miniflare: { … } })` or `--config` / `--env` on the CLI.

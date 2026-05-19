@@ -35,12 +35,14 @@
   },
   "scripts": {
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "release": "release-it"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",
     "@types/node": "^25.9.0",
     "miniflare": "^4.20260515.0",
+    "release-it": "^20.0.1",
     "typescript": "^5.9.0",
     "workerd": "^1.20250514.1",
     "wrangler": "^4.92.0"
