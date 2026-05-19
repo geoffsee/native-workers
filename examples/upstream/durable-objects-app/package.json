@@ -12,9 +12,9 @@
 		"test:watch": "vitest"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-tsconfig": "workspace:^",
-		"undici": "catalog:default",
-		"vitest": "catalog:default",
-		"wrangler": "workspace:*"
+		"@cloudflare/workers-tsconfig": "*",
+		"undici": "7.24.8",
+		"vitest": "4.1.0",
+		"wrangler": "^4.92.0"
 	}
 }

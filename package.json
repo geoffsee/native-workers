@@ -20,6 +20,10 @@
   "files": [
     "src"
   ],
+  "workspaces": [
+    "examples/upstream/*",
+    "examples/vendor/*"
+  ],
   "engines": {
     "bun": ">=1.1.0"
   },

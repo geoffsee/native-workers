@@ -7,9 +7,9 @@
 		"test:ci": "vitest run"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-tsconfig": "workspace:*",
-		"@cloudflare/workers-types": "catalog:default",
-		"vitest": "catalog:default",
-		"wrangler": "workspace:*"
+		"@cloudflare/workers-tsconfig": "*",
+		"@cloudflare/workers-types": "^4.20260518.1",
+		"vitest": "4.1.0",
+		"wrangler": "^4.92.0"
 	}
 }

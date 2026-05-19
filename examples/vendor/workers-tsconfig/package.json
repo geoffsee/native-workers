@@ -1,0 +1,6 @@
+{
+	"name": "@cloudflare/workers-tsconfig",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Local vendored mirror of cloudflare/workers-sdk's @cloudflare/workers-tsconfig package, used so fixtures under examples/upstream/ can resolve their tsconfig `extends` reference without the upstream pnpm workspace."
+}
