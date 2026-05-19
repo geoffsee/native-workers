@@ -37,7 +37,8 @@
     "test": "bun test ./test",
     "sync-examples": "bun run scripts/sync-examples.ts",
     "typecheck": "tsc --noEmit",
-    "release": "release-it"
+    "release": "release-it",
+    "postinstall": "bash .dev/scripts/postinstall.sh"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",
